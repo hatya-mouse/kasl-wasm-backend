@@ -14,6 +14,21 @@
 //  limitations under the License.
 //
 
-mod backend;
+mod jump;
 
-pub use backend::WasmBackend;
+use crate::{WasmBackend, backend::TranslationCtx};
+use kasl_ir::Inst;
+
+impl WasmBackend {
+    pub(super) fn translate_inst(
+        &self,
+        f: &mut wasm_encoder::Function,
+        inst: &Inst,
+        ctx: &mut TranslationCtx,
+    ) {
+        match inst {
+            Inst::Jump { block, args } => self.translate_jump(f, block, &args, ctx),
+            _ => (),
+        }
+    }
+}

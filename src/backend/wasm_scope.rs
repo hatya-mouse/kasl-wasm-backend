@@ -14,6 +14,10 @@
 //  limitations under the License.
 //
 
-mod backend;
+use kasl_ir::Block;
 
-pub use backend::WasmBackend;
+#[derive(PartialEq)]
+pub(super) enum WasmScope {
+    Block(Block),
+    Loop(Block),
+}

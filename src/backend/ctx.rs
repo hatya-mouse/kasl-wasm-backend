@@ -14,6 +14,14 @@
 //  limitations under the License.
 //
 
-mod backend;
+use crate::backend::wasm_scope::WasmScope;
+use kasl_ir::Block;
+use std::collections::{HashMap, HashSet};
 
-pub use backend::WasmBackend;
+pub(super) struct TranslationCtx<'a> {
+    pub func: &'a kasl_ir::Function,
+    pub rpo_indices: HashMap<Block, usize>,
+    pub predecessors: HashMap<Block, Vec<Block>>,
+    pub back_edges: HashSet<(Block, Block)>,
+    pub scope_stack: Vec<WasmScope>,
+}
