@@ -1,5 +1,5 @@
 //
-//  Copyright 2025-2026 Shuntaro Kasatani
+//  Copyright 2026 Shuntaro Kasatani
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,5 +15,7 @@
 //
 
 mod backend;
+mod ir_type;
+mod stackifier;
 
 pub use backend::WasmBackend;

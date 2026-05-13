@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 kasl-ir = "0.1.0"
-wasm-encoder = "0.246.1"
+wasm-encoder = "0.248.0"
