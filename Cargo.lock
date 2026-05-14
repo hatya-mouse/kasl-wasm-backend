@@ -32,9 +32,9 @@ dependencies = [
 
 [[package]]
 name = "kasl-ir"
-version = "0.1.0"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d47701276b8b5bc4eaa23203070eeb899e34bb59084580d949c70d6a62cd632"
+checksum = "3a8b242d29978ccb2e003e63411afd7c41e78915d5b882259b16b861b4c4969c"
 
 [[package]]
 name = "kasl-wasm-backend"

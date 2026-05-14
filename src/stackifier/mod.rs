@@ -14,5 +14,26 @@
 //  limitations under the License.
 //
 
-use kasl_ir::{Block, Function};
-use std::collections::{HashMap, HashSet};
+mod block_nesting;
+mod edge_classify;
+
+use std::collections::HashMap;
+
+/// A struct to translate a function into Structured Control Flow using the Stackifier algorithm.
+pub struct GraphTranslator<'a> {
+    wasm_func: &'a mut wasm_encoder::Function,
+    ir_func: kasl_ir::Function,
+}
+
+impl<'a> GraphTranslator<'a> {
+    /// Creates a new Stackifier instance.
+    pub fn new(wasm_func: &'a mut wasm_encoder::Function, ir_func: kasl_ir::Function) -> Self {
+        Self { wasm_func, ir_func }
+    }
+
+    /// Translates the function into Structured Control Flow.
+    pub fn translate(&mut self) {
+        // Sort the blocks in reverse post-order
+        let sorted_blocks = self.ir_func.sorted_blocks();
+    }
+}
