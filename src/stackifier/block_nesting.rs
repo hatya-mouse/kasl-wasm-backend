@@ -32,7 +32,16 @@ impl GraphTranslator<'_> {
         // Stack to keep track of the currently open scopes
         let mut scope_stack: Vec<ScopeKind> = Vec::new();
         // Loop through the sorted blocks and build a graph
-        for block in &sorted_blocks {
+        for (i, block) in sorted_blocks.iter().enumerate() {
+            let Some(block_data) = self.ir_func.get_block(block) else {
+                continue;
+            };
+
+            for successor in block_data.get_successors() {
+                let edge_type = self.classify_edge(block, &successor, &sorted_blocks);
+                // let target =
+            }
+
             if loop_headers.contains(block) {
                 // If the block is a loop header, add continue statement at the end of the block
                 self.wasm_func.instructions().loop_(BlockType::Empty);

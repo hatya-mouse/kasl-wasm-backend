@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+binaryen = "0.13.0"
 kasl-ir = "0.3.4"
 wasm-encoder = "0.248.0"

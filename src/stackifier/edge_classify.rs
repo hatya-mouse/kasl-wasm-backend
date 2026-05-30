@@ -19,7 +19,7 @@ use kasl_ir::Block;
 use std::collections::HashSet;
 
 #[derive(PartialEq)]
-enum EdgeType {
+pub(super) enum EdgeType {
     BackEdge,
     ForwardEdge,
 }
@@ -59,7 +59,12 @@ impl GraphTranslator<'_> {
     }
 
     /// Determines whether the given block is a back edge or a forward edge.
-    fn classify_edge(&self, from: &Block, to: &Block, sorted_blocks: &[Block]) -> EdgeType {
+    pub(super) fn classify_edge(
+        &self,
+        from: &Block,
+        to: &Block,
+        sorted_blocks: &[Block],
+    ) -> EdgeType {
         let from_index = sorted_blocks.iter().position(|b| b == from).unwrap();
         let to_index = sorted_blocks.iter().position(|b| b == to).unwrap();
 
