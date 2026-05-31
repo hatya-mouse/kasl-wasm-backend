@@ -25,6 +25,7 @@ pub(super) fn inst_store(
     dst_ptr: &Value,
     dst_offset: &Offset,
 ) {
+    // 1: dst_ptr, 2: src value
     wasm_func.instructions().local_get(context.val_map[dst_ptr]);
     wasm_func.instructions().local_get(context.val_map[src]);
 

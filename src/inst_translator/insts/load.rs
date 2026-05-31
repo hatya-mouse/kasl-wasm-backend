@@ -26,6 +26,7 @@ pub(super) fn inst_load(
     src_offset: &Offset,
     dst: &Value,
 ) {
+    // 1: src_ptr
     wasm_func.instructions().local_get(context.val_map[src_ptr]);
 
     let offset = offset_to_wasm(src_offset);

@@ -16,13 +16,13 @@
 
 mod alloc;
 mod load;
+mod memcpy;
+mod memset;
 mod store;
-
-use std::iter::empty;
 
 use crate::inst_translator::{
     TranslationContext,
-    insts::{load::inst_load, store::inst_store},
+    insts::{load::inst_load, memcpy::inst_memcpy, memset::inst_memset, store::inst_store},
 };
 use alloc::inst_alloc;
 use kasl_ir::Inst;
@@ -55,6 +55,20 @@ pub(super) fn translate_inst(
             dst_offset,
         } => {
             inst_store(wasm_func, context, src, dst_ptr, dst_offset);
+        }
+        Inst::Memcpy {
+            size,
+            src_ptr,
+            dst_ptr,
+        } => {
+            inst_memcpy(wasm_func, context, size, src_ptr, dst_ptr);
+        }
+        Inst::Memset {
+            size,
+            value,
+            dst_ptr,
+        } => {
+            inst_memset(wasm_func, context, size, value, dst_ptr);
         }
         _ => (),
     }
