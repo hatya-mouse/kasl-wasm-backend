@@ -14,50 +14,48 @@
 //  limitations under the License.
 //
 
-use crate::ir_type::ir_type_to_val_type;
+use crate::{WasmBackendError, inst_translator::construct_cfg, ir_type::ir_type_to_val_type};
 use kasl_ir::Function;
-use wasm_encoder::{CodeSection, FunctionSection, Module, TypeSection, ValType};
+use wasm_encoder::{
+    CodeSection, ExportKind, ExportSection, FunctionSection, Module, TypeSection, ValType,
+};
 
-pub struct WasmBackend {
-    module: Module,
-}
+/// Compiles the function to Wasm binary.
+pub fn compile(kasl_func: Function) -> Result<Vec<u8>, WasmBackendError> {
+    let mut module = Module::new();
 
-impl Default for WasmBackend {
-    fn default() -> Self {
-        Self {
-            module: Module::new(),
-        }
-    }
-}
+    let mut types = TypeSection::new();
+    module.section(&types);
 
-impl WasmBackend {
-    /// Compiles the function to Wasm binary.
-    pub fn compile(&mut self, func: Function) -> Result<Vec<u8>, String> {
-        let mut types = TypeSection::new();
-        let mut functions = FunctionSection::new();
-        let mut codes = CodeSection::new();
+    // Get the entry block and its parameters to determine the function type
+    let Some(entry_block) = kasl_func
+        .entry_block()
+        .and_then(|b| kasl_func.get_block(&b))
+    else {
+        return Err(WasmBackendError::NoEntryBlock);
+    };
 
-        // Get the entry block and its parameters to determine the function type
-        let Some(entry_block) = func.entry_block().and_then(|b| func.get_block(&b)) else {
-            return Err("No entry block".to_string());
-        };
+    let params: Vec<ValType> = entry_block
+        .get_params()
+        .iter()
+        .map(|p| ir_type_to_val_type(kasl_func.get_val_type(*p)))
+        .collect();
 
-        let params: Vec<ValType> = entry_block
-            .get_params()
-            .iter()
-            .map(|p| ir_type_to_val_type(func.get_val_type(*p)))
-            .collect();
+    // KASL-IR does not support return values
+    let mut functions = FunctionSection::new();
+    types.ty().function(params, vec![]);
+    functions.function(0);
+    module.section(&functions);
 
-        // KASL-IR does not support return values
-        types.ty().function(params, vec![]);
-        functions.function(0);
+    let mut exports = ExportSection::new();
+    exports.export("f", ExportKind::Func, 0);
+    module.section(&exports);
 
-        // TODO: Add function to the codes section
+    // TODO: Add function to the codes section
+    let mut codes = CodeSection::new();
+    let wasm_func = construct_cfg(&kasl_func);
+    codes.function(&wasm_func);
+    module.section(&codes);
 
-        self.module.section(&types);
-        self.module.section(&functions);
-        self.module.section(&codes);
-
-        Ok(self.module.clone().finish())
-    }
+    Ok(module.clone().finish())
 }

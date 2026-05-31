@@ -1,5 +1,5 @@
 //
-//  Copyright 2026 Shuntaro Kasatani
+//  Copyright 2025-2026 Shuntaro Kasatani
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,10 +14,12 @@
 //  limitations under the License.
 //
 
-mod backend;
-mod error;
-mod inst_translator;
-mod ir_type;
+use kasl_ir::Offset;
 
-pub use backend::compile;
-pub use error::WasmBackendError;
+/// Converts the given KASL-IR offset to a u64 value which the PointerScaled offset is scaled by 4.
+pub(super) fn offset_to_wasm(offset: &Offset) -> u64 {
+    match offset {
+        Offset::Immediate(imm) => *imm as u64,
+        Offset::PointerScaled(scale) => *scale as u64 * 4,
+    }
+}

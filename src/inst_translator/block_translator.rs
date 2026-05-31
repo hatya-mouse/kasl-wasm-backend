@@ -1,5 +1,5 @@
 //
-//  Copyright 2026 Shuntaro Kasatani
+//  Copyright 2025-2026 Shuntaro Kasatani
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,10 +14,16 @@
 //  limitations under the License.
 //
 
-mod backend;
-mod error;
-mod inst_translator;
-mod ir_type;
+use crate::inst_translator::{TranslationContext, insts::translate_inst};
+use kasl_ir::BlockData;
 
-pub use backend::compile;
-pub use error::WasmBackendError;
+/// Translates the given block.
+pub(super) fn translate_block(
+    wasm_func: &mut wasm_encoder::Function,
+    context: &TranslationContext,
+    block_data: &BlockData,
+) {
+    for inst in block_data.get_insts() {
+        translate_inst(wasm_func, context, inst);
+    }
+}

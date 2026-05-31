@@ -1,5 +1,5 @@
 //
-//  Copyright 2026 Shuntaro Kasatani
+//  Copyright 2025-2026 Shuntaro Kasatani
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,10 +14,6 @@
 //  limitations under the License.
 //
 
-mod backend;
-mod error;
-mod inst_translator;
-mod ir_type;
-
-pub use backend::compile;
-pub use error::WasmBackendError;
+pub enum WasmBackendError {
+    NoEntryBlock,
+}
