@@ -70,6 +70,35 @@ pub(super) fn translate_inst(
         } => {
             inst_memset(wasm_func, context, size, value, dst_ptr);
         }
-        _ => (),
+        Inst::Const { value, dst } => {}
+        Inst::Assign { var, src } => {}
+        Inst::LoadVar { var, dst } => {}
+        Inst::Jump { block, args } => {}
+        Inst::Brif {
+            cond,
+            then_block,
+            then_args,
+            else_block,
+            else_args,
+        } => {}
+        Inst::Return { vals } => {}
+        Inst::Select {
+            cond,
+            then_val,
+            else_val,
+            dst,
+        } => {}
+        Inst::IResize { src, dst_ty, dst } => {}
+        Inst::FResize { src, dst_ty, dst } => {}
+        Inst::IToF { src, dst_ty, dst } => {}
+        Inst::FToI { src, dst_ty, dst } => {}
+        Inst::PtrAdd { ptr, offset, dst } => {}
+        Inst::IBinOp { op, lhs, rhs, dst } => {}
+        Inst::FBinOp { op, lhs, rhs, dst } => {}
+        Inst::IUnaryOp { op, operand, dst } => {}
+        Inst::FUnaryOp { op, operand, dst } => {}
+        Inst::ICmp { cmp, lhs, rhs, dst } => {}
+        Inst::FCmp { cmp, lhs, rhs, dst } => {}
+        Inst::ICmpImm { cmp, lhs, rhs, dst } => {}
     }
 }
