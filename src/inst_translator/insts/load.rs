@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-use crate::inst_translator::{insts::InstTranslator, utils::offset_to_wasm};
+use crate::inst_translator::{insts::InstTranslator, utils::offset_to_u64};
 use kasl_ir::{IRType, Offset, Value};
 use wasm_encoder::MemArg;
 
@@ -33,7 +33,7 @@ impl InstTranslator<'_> {
             .local_get(self.ctx.val_map[src_ptr]);
 
         // Then calculate the offset to load from and push it to the stack
-        let offset = offset_to_wasm(src_offset);
+        let offset = offset_to_u64(src_offset);
         let mem_arg = MemArg {
             offset,
             align: 0,

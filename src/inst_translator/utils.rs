@@ -16,10 +16,18 @@
 
 use kasl_ir::Offset;
 
-/// Converts the given KASL-IR offset to a u64 value which the PointerScaled offset is scaled by 4.
-pub(super) fn offset_to_wasm(offset: &Offset) -> u64 {
+/// Converts the given KASL-IR offset to an u64 value which the PointerScaled offset is scaled by 4.
+pub(super) fn offset_to_u64(offset: &Offset) -> u64 {
     match offset {
         Offset::Immediate(imm) => *imm as u64,
         Offset::PointerScaled(scale) => *scale as u64 * 4,
+    }
+}
+
+/// Converts the given KASL-IR offset to an i32 value which the PointerScaled offset is scaled by 4.
+pub(super) fn offset_to_i32(offset: &Offset) -> i32 {
+    match offset {
+        Offset::Immediate(imm) => *imm as i32,
+        Offset::PointerScaled(scale) => *scale as i32 * 4,
     }
 }

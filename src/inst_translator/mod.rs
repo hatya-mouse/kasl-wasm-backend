@@ -33,7 +33,7 @@ struct TranslationContext {
     var_map: HashMap<Variable, u32>,
     /// Mapping from KASL-IR variables to their types.
     var_types: HashMap<Variable, IRType>,
-    /// Mapping from KASL-IR blocks to their corresponding indices for br_table instruction
+    /// Mapping from KASL-IR blocks to their corresponding indices for br_table instruction.
     block_ids: HashMap<Block, u32>,
     /// Index of a WASM local to track the current block index and the stack pointer.
     l_current_block: u32,
@@ -51,7 +51,7 @@ struct TranslationContext {
 ///         (block ;; Block 1
 ///             (block ;; Block 0
 ///                 (block ;; Branch Block
-///                     local_get $l_current_block
+///                     local.get $l_current_block
 ///                     (br_table 1 2 3) ;; Branch to the corresponding block
 ///                 )
 ///                 ;; Block 0 body
@@ -90,9 +90,11 @@ pub(super) fn construct_cfg(kasl_func: &kasl_ir::Function) -> wasm_encoder::Func
     );
     wasm_func.instructions().end();
 
+    kasl_func.get_block(&blocks[0]).unwrap().get_params();
+
     // --- EACH NESTED BLOCK ---
     let mut nests_to_loop = blocks.len() as u32;
-    let mut inst_translator = InstTranslator::new(&mut wasm_func, &ctx);
+    let mut inst_translator = InstTranslator::new(&mut wasm_func, &ctx, kasl_func);
     for block in blocks {
         let Some(block_data) = kasl_func.get_block(&block) else {
             continue;

@@ -20,6 +20,7 @@ use kasl_ir::BlockData;
 pub(super) struct InstTranslator<'a> {
     pub wasm_func: &'a mut wasm_encoder::Function,
     pub(in crate::inst_translator) ctx: &'a TranslationContext,
+    pub(in crate::inst_translator) kasl_func: &'a kasl_ir::Function,
 }
 
 impl<'a> InstTranslator<'a> {
@@ -27,8 +28,13 @@ impl<'a> InstTranslator<'a> {
     pub(super) fn new(
         wasm_func: &'a mut wasm_encoder::Function,
         ctx: &'a TranslationContext,
+        kasl_func: &'a kasl_ir::Function,
     ) -> Self {
-        Self { wasm_func, ctx }
+        Self {
+            wasm_func,
+            ctx,
+            kasl_func,
+        }
     }
 
     /// Translates the given block.
