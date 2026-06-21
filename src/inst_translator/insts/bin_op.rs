@@ -155,5 +155,43 @@ impl InstTranslator<'_> {
             .local_set(self.ctx.val_map[dst]);
     }
 
-    pub(super) fn inst_fbop(&mut self, op: &FloatBinOp, lhs: &Value, rhs: &Value, dst: &Value) {}
+    pub(super) fn inst_fbop(&mut self, op: &FloatBinOp, lhs: &Value, rhs: &Value, dst: &Value) {
+        let wasm_ty = convert_type(&self.ctx.val_types[lhs]);
+        self.wasm_func
+            .instructions()
+            .local_get(self.ctx.val_map[lhs]);
+        self.wasm_func
+            .instructions()
+            .local_get(self.ctx.val_map[rhs]);
+
+        match wasm_ty {
+            ValType::F32 => match op {
+                FloatBinOp::Add => {
+                    self.wasm_func.instructions().f32_add();
+                }
+                FloatBinOp::Sub => {
+                    self.wasm_func.instructions().f32_sub();
+                }
+                FloatBinOp::Mul => {
+                    self.wasm_func.instructions().f32_mul();
+                }
+                FloatBinOp::Div => {
+                    self.wasm_func.instructions().f32_div();
+                }
+                FloatBinOp::Rem => {
+                    // Calculate the remainder using the formula: a - b * floor(a / b)
+                    self.wasm_func
+                        .instructions()
+                        .local_get(self.ctx.val_map[lhs]);
+                    self.wasm_func
+                        .instructions()
+                        .local_get(self.ctx.val_map[rhs]);
+                    self.wasm_func.instructions().f32_div();
+                    self.wasm_func.instructions().f32_trunc();
+                    self.wasm_func.instructions().f32_mul();
+                    self.wasm_func.instructions().f32_sub();
+                }
+            },
+        }
+    }
 }
