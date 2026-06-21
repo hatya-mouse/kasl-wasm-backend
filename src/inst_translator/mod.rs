@@ -33,34 +33,64 @@ struct TranslationContext {
     var_map: HashMap<Variable, u32>,
     /// Mapping from KASL-IR variables to their types.
     var_types: HashMap<Variable, IRType>,
+    /// Mapping from KASL-IR blocks to their corresponding indices for br_table instruction
+    block_ids: HashMap<Block, u32>,
     /// Index of a WASM local to track the current block index and the stack pointer.
     l_current_block: u32,
     /// Index of a WASM local to track the stack pointer for memory allocation.
     l_stack_ptr: u32,
 }
 
+/// Constructs the CFG of the given KASL-IR by nesting the blocks in the function.
+///
+/// The constructed WASM function will look like the following:
+///
+/// ```wat
+/// (loop
+///     (block ;; Block 2
+///         (block ;; Block 1
+///             (block ;; Block 0
+///                 (block ;; Branch Block
+///                     local_get $l_current_block
+///                     (br_table 1 2 3) ;; Branch to the corresponding block
+///                 )
+///                 ;; Block 0 body
+///                 br 3
+///             )
+///             ;; Block 1 body
+///             br 2
+///         )
+///         ;; Block 2 body
+///         br 1
+///     )
+/// )
+/// ```
 pub(super) fn construct_cfg(kasl_func: &kasl_ir::Function) -> wasm_encoder::Function {
-    let blocks = kasl_func.get_blocks();
-    let block_ids: HashMap<Block, u32> =
-        blocks.iter().cloned().zip(0..blocks.len() as u32).collect();
-
     // Initialize local variables for SSA values and variables
-    let (locals, ctx) = initialize_locals(kasl_func);
+    let (locals, blocks, ctx) = initialize_locals(kasl_func);
     let mut wasm_func = wasm_encoder::Function::new(locals);
 
     // Create the outermost loop to encompass the entire function body
     wasm_func.instructions().loop_(BlockType::Empty);
 
     // Add br_table instruction to jump to the appropriate block based on the current block index
-    for _ in 0..blocks.len() {
+    // Create extra block to branch to other blocks
+    for _ in 0..blocks.len() + 1 {
         wasm_func.instructions().block(BlockType::Empty);
     }
-    wasm_func.instructions().local_get(ctx.l_current_block);
-    wasm_func
-        .instructions()
-        .br_table(block_ids.values().cloned().collect::<Vec<u32>>(), 0);
 
-    // Translate each blocks
+    // --- BRANCH BLOCK ---
+    wasm_func.instructions().local_get(ctx.l_current_block);
+    wasm_func.instructions().br_table(
+        ctx.block_ids
+            .values()
+            .map(|id| *id + 1)
+            .collect::<Vec<u32>>(),
+        0,
+    );
+    wasm_func.instructions().end();
+
+    // --- EACH NESTED BLOCK ---
     let mut nests_to_loop = blocks.len() as u32;
     let mut inst_translator = InstTranslator::new(&mut wasm_func, &ctx);
     for block in blocks {
@@ -77,11 +107,16 @@ pub(super) fn construct_cfg(kasl_func: &kasl_ir::Function) -> wasm_encoder::Func
         nests_to_loop -= 1;
     }
 
+    // End the outermost loop
+    inst_translator.wasm_func.instructions().end();
+
     wasm_func
 }
 
 /// Initializes the local variables by adding SSA values and variables as WASM locals, and returns the list of locals and the translation context.
-fn initialize_locals(kasl_func: &kasl_ir::Function) -> (Vec<(u32, ValType)>, TranslationContext) {
+fn initialize_locals(
+    kasl_func: &kasl_ir::Function,
+) -> (Vec<(u32, ValType)>, Vec<Block>, TranslationContext) {
     let mut ctx = TranslationContext::default();
     let mut locals = vec![];
     let mut local_index = 0;
@@ -108,7 +143,11 @@ fn initialize_locals(kasl_func: &kasl_ir::Function) -> (Vec<(u32, ValType)>, Tra
     ctx.l_stack_ptr = local_index + 1;
     locals.push((local_index, ValType::I32));
 
-    (locals, ctx)
+    // Decide the depth of each block based on the number of blocks in the function
+    let blocks = kasl_func.get_blocks();
+    ctx.block_ids = blocks.iter().cloned().zip(0..blocks.len() as u32).collect();
+
+    (locals, blocks, ctx)
 }
 
 /// Converts the KASL-IR type to the corresponding WebAssembly type.
