@@ -14,21 +14,26 @@
 //  limitations under the License.
 //
 
-use crate::inst_translator::TranslationContext;
+use crate::inst_translator::insts::InstTranslator;
 use kasl_ir::Value;
 
-pub(super) fn inst_alloc(
-    wasm_func: &mut wasm_encoder::Function,
-    context: &TranslationContext,
-    size: &u32,
-    dst: &Value,
-) {
-    // Allocate memory for the variable
-    wasm_func.instructions().local_get(context.l_stack_ptr);
-    wasm_func.instructions().local_set(context.val_map[dst]);
-    // Update the stack pointer
-    wasm_func.instructions().local_get(context.l_stack_ptr);
-    wasm_func.instructions().i32_const(*size as i32);
-    wasm_func.instructions().i32_add();
-    wasm_func.instructions().local_set(context.l_stack_ptr);
+impl InstTranslator<'_> {
+    pub(super) fn inst_alloc(&mut self, size: &u32, dst: &Value) {
+        // Allocate memory for the variable
+        self.wasm_func
+            .instructions()
+            .local_get(self.ctx.l_stack_ptr);
+        self.wasm_func
+            .instructions()
+            .local_set(self.ctx.val_map[dst]);
+        // Update the stack pointer
+        self.wasm_func
+            .instructions()
+            .local_get(self.ctx.l_stack_ptr);
+        self.wasm_func.instructions().i32_const(*size as i32);
+        self.wasm_func.instructions().i32_add();
+        self.wasm_func
+            .instructions()
+            .local_set(self.ctx.l_stack_ptr);
+    }
 }

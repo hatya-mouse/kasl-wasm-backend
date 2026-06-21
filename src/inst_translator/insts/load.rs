@@ -14,36 +14,41 @@
 //  limitations under the License.
 //
 
-use crate::inst_translator::{TranslationContext, offset_conversion::offset_to_wasm};
+use crate::inst_translator::{insts::InstTranslator, utils::offset_to_wasm};
 use kasl_ir::{IRType, Offset, Value};
 use wasm_encoder::MemArg;
 
-pub(super) fn inst_load(
-    wasm_func: &mut wasm_encoder::Function,
-    context: &TranslationContext,
-    ty: &IRType,
-    src_ptr: &Value,
-    src_offset: &Offset,
-    dst: &Value,
-) {
-    // 1: src_ptr
-    wasm_func.instructions().local_get(context.val_map[src_ptr]);
+impl InstTranslator<'_> {
+    pub(super) fn inst_load(
+        &mut self,
+        ty: &IRType,
+        src_ptr: &Value,
+        src_offset: &Offset,
+        dst: &Value,
+    ) {
+        // 1: src_ptr
+        self.wasm_func
+            .instructions()
+            .local_get(self.ctx.val_map[src_ptr]);
 
-    let offset = offset_to_wasm(src_offset);
-    let mem_arg = MemArg {
-        offset,
-        align: 0,
-        memory_index: 0,
-    };
-    match ty {
-        IRType::I8 => wasm_func.instructions().i32_load8_s(mem_arg),
-        IRType::I16 => wasm_func.instructions().i32_load16_s(mem_arg),
-        IRType::I32 => wasm_func.instructions().i32_load(mem_arg),
-        IRType::I64 => wasm_func.instructions().i64_load(mem_arg),
-        IRType::F32 => wasm_func.instructions().f32_load(mem_arg),
-        IRType::F64 => wasm_func.instructions().f64_load(mem_arg),
-        IRType::Void => wasm_func.instructions().i32_load(mem_arg),
-        IRType::Ptr => wasm_func.instructions().i32_load(mem_arg),
-    };
-    wasm_func.instructions().local_set(context.val_map[dst]);
+        let offset = offset_to_wasm(src_offset);
+        let mem_arg = MemArg {
+            offset,
+            align: 0,
+            memory_index: 0,
+        };
+        match ty {
+            IRType::I8 => self.wasm_func.instructions().i32_load8_s(mem_arg),
+            IRType::I16 => self.wasm_func.instructions().i32_load16_s(mem_arg),
+            IRType::I32 => self.wasm_func.instructions().i32_load(mem_arg),
+            IRType::I64 => self.wasm_func.instructions().i64_load(mem_arg),
+            IRType::F32 => self.wasm_func.instructions().f32_load(mem_arg),
+            IRType::F64 => self.wasm_func.instructions().f64_load(mem_arg),
+            IRType::Void => self.wasm_func.instructions().i32_load(mem_arg),
+            IRType::Ptr => self.wasm_func.instructions().i32_load(mem_arg),
+        };
+        self.wasm_func
+            .instructions()
+            .local_set(self.ctx.val_map[dst]);
+    }
 }

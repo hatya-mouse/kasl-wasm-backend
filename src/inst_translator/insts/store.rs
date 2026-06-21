@@ -14,36 +14,36 @@
 //  limitations under the License.
 //
 
-use crate::inst_translator::{TranslationContext, offset_conversion::offset_to_wasm};
+use crate::inst_translator::{insts::InstTranslator, utils::offset_to_wasm};
 use kasl_ir::{IRType, Offset, Value};
 use wasm_encoder::MemArg;
 
-pub(super) fn inst_store(
-    wasm_func: &mut wasm_encoder::Function,
-    context: &TranslationContext,
-    src: &Value,
-    dst_ptr: &Value,
-    dst_offset: &Offset,
-) {
-    // 1: dst_ptr, 2: src value
-    wasm_func.instructions().local_get(context.val_map[dst_ptr]);
-    wasm_func.instructions().local_get(context.val_map[src]);
+impl InstTranslator<'_> {
+    pub(super) fn inst_store(&mut self, src: &Value, dst_ptr: &Value, dst_offset: &Offset) {
+        // 1: dst_ptr, 2: src value
+        self.wasm_func
+            .instructions()
+            .local_get(self.ctx.val_map[dst_ptr]);
+        self.wasm_func
+            .instructions()
+            .local_get(self.ctx.val_map[src]);
 
-    let ty = context.val_types[src];
-    let offset = offset_to_wasm(dst_offset);
-    let mem_arg = MemArg {
-        offset,
-        align: 0,
-        memory_index: 0,
-    };
-    match ty {
-        IRType::I8 => wasm_func.instructions().i32_store8(mem_arg),
-        IRType::I16 => wasm_func.instructions().i32_store16(mem_arg),
-        IRType::I32 => wasm_func.instructions().i32_store(mem_arg),
-        IRType::I64 => wasm_func.instructions().i64_store(mem_arg),
-        IRType::F32 => wasm_func.instructions().f32_store(mem_arg),
-        IRType::F64 => wasm_func.instructions().f64_store(mem_arg),
-        IRType::Void => wasm_func.instructions().i32_store(mem_arg),
-        IRType::Ptr => wasm_func.instructions().i32_store(mem_arg),
-    };
+        let ty = self.ctx.val_types[src];
+        let offset = offset_to_wasm(dst_offset);
+        let mem_arg = MemArg {
+            offset,
+            align: 0,
+            memory_index: 0,
+        };
+        match ty {
+            IRType::I8 => self.wasm_func.instructions().i32_store8(mem_arg),
+            IRType::I16 => self.wasm_func.instructions().i32_store16(mem_arg),
+            IRType::I32 => self.wasm_func.instructions().i32_store(mem_arg),
+            IRType::I64 => self.wasm_func.instructions().i64_store(mem_arg),
+            IRType::F32 => self.wasm_func.instructions().f32_store(mem_arg),
+            IRType::F64 => self.wasm_func.instructions().f64_store(mem_arg),
+            IRType::Void => self.wasm_func.instructions().i32_store(mem_arg),
+            IRType::Ptr => self.wasm_func.instructions().i32_store(mem_arg),
+        };
+    }
 }

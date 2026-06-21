@@ -14,16 +14,27 @@
 //  limitations under the License.
 //
 
-use crate::inst_translator::{TranslationContext, insts::translate_inst};
+use crate::inst_translator::TranslationContext;
 use kasl_ir::BlockData;
 
-/// Translates the given block.
-pub(super) fn translate_block(
-    wasm_func: &mut wasm_encoder::Function,
-    context: &TranslationContext,
-    block_data: &BlockData,
-) {
-    for inst in block_data.get_insts() {
-        translate_inst(wasm_func, context, inst);
+pub(super) struct InstTranslator<'a> {
+    pub wasm_func: &'a mut wasm_encoder::Function,
+    pub(in crate::inst_translator) ctx: &'a TranslationContext,
+}
+
+impl<'a> InstTranslator<'a> {
+    /// Creates a new `InstTranslator` instance.
+    pub(super) fn new(
+        wasm_func: &'a mut wasm_encoder::Function,
+        ctx: &'a TranslationContext,
+    ) -> Self {
+        Self { wasm_func, ctx }
+    }
+
+    /// Translates the given block.
+    pub(super) fn translate_block(&mut self, block_data: &BlockData) {
+        for inst in block_data.get_insts() {
+            self.translate_inst(inst);
+        }
     }
 }

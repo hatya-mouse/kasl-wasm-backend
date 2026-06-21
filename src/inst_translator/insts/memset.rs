@@ -14,19 +14,17 @@
 //  limitations under the License.
 //
 
-use crate::inst_translator::TranslationContext;
+use crate::inst_translator::insts::InstTranslator;
 use kasl_ir::Value;
 
-pub(super) fn inst_memset(
-    wasm_func: &mut wasm_encoder::Function,
-    context: &TranslationContext,
-    size: &u32,
-    value: &u8,
-    dst_ptr: &Value,
-) {
-    // 1: dst_ptr, 2: value, 3: size
-    wasm_func.instructions().local_get(context.val_map[dst_ptr]);
-    wasm_func.instructions().i32_const(*value as i32);
-    wasm_func.instructions().i32_const(*size as i32);
-    wasm_func.instructions().memory_fill(0);
+impl InstTranslator<'_> {
+    pub(super) fn inst_memset(&mut self, size: &u32, value: &u8, dst_ptr: &Value) {
+        // 1: dst_ptr, 2: value, 3: size
+        self.wasm_func
+            .instructions()
+            .local_get(self.ctx.val_map[dst_ptr]);
+        self.wasm_func.instructions().i32_const(*value as i32);
+        self.wasm_func.instructions().i32_const(*size as i32);
+        self.wasm_func.instructions().memory_fill(0);
+    }
 }

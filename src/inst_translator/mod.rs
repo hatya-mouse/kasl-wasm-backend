@@ -16,20 +16,26 @@
 
 mod block_translator;
 mod insts;
-mod offset_conversion;
+mod utils;
 
-use crate::inst_translator::block_translator::translate_block;
+use block_translator::InstTranslator;
 use kasl_ir::{Block, IRType, Value, Variable};
 use std::collections::HashMap;
 use wasm_encoder::{BlockType, ValType};
 
 #[derive(Default)]
 struct TranslationContext {
+    /// Mapping from KASL-IR values to WASM local indices.
     val_map: HashMap<Value, u32>,
-    var_map: HashMap<Variable, u32>,
+    /// Mapping from KASL-IR values to their types.
     val_types: HashMap<Value, IRType>,
+    /// Mapping from KASL-IR variables to WASM local indices.
+    var_map: HashMap<Variable, u32>,
+    /// Mapping from KASL-IR variables to their types.
     var_types: HashMap<Variable, IRType>,
+    /// Index of a WASM local to track the current block index and the stack pointer.
     l_current_block: u32,
+    /// Index of a WASM local to track the stack pointer for memory allocation.
     l_stack_ptr: u32,
 }
 
@@ -39,7 +45,7 @@ pub(super) fn construct_cfg(kasl_func: &kasl_ir::Function) -> wasm_encoder::Func
         blocks.iter().cloned().zip(0..blocks.len() as u32).collect();
 
     // Initialize local variables for SSA values and variables
-    let (locals, context) = initialize_locals(kasl_func);
+    let (locals, ctx) = initialize_locals(kasl_func);
     let mut wasm_func = wasm_encoder::Function::new(locals);
 
     // Create the outermost loop to encompass the entire function body
@@ -49,40 +55,41 @@ pub(super) fn construct_cfg(kasl_func: &kasl_ir::Function) -> wasm_encoder::Func
     for _ in 0..blocks.len() {
         wasm_func.instructions().block(BlockType::Empty);
     }
-    wasm_func.instructions().local_get(context.l_current_block);
+    wasm_func.instructions().local_get(ctx.l_current_block);
     wasm_func
         .instructions()
         .br_table(block_ids.values().cloned().collect::<Vec<u32>>(), 0);
 
     // Translate each blocks
     let mut nests_to_loop = blocks.len() as u32;
+    let mut inst_translator = InstTranslator::new(&mut wasm_func, &ctx);
     for block in blocks {
         let Some(block_data) = kasl_func.get_block(&block) else {
             continue;
         };
 
         // Translate the body of the block
-        translate_block(&mut wasm_func, &context, block_data);
+        inst_translator.translate_block(block_data);
 
         // Jump back to the outermost loop to select the next block
-        wasm_func.instructions().br(nests_to_loop);
-        wasm_func.instructions().end();
+        inst_translator.wasm_func.instructions().br(nests_to_loop);
+        inst_translator.wasm_func.instructions().end();
         nests_to_loop -= 1;
     }
 
     wasm_func
 }
 
-/// Initializes the local variables.
+/// Initializes the local variables by adding SSA values and variables as WASM locals, and returns the list of locals and the translation context.
 fn initialize_locals(kasl_func: &kasl_ir::Function) -> (Vec<(u32, ValType)>, TranslationContext) {
-    let mut context = TranslationContext::default();
+    let mut ctx = TranslationContext::default();
     let mut locals = vec![];
     let mut local_index = 0;
 
     // Add SSA values as WASM locals
     for (val, ir_ty) in kasl_func.get_val_types() {
         let wasm_ty = convert_type(ir_ty);
-        context.val_map.insert(*val, local_index);
+        ctx.val_map.insert(*val, local_index);
         locals.push((local_index, wasm_ty));
         local_index += 1;
     }
@@ -90,18 +97,18 @@ fn initialize_locals(kasl_func: &kasl_ir::Function) -> (Vec<(u32, ValType)>, Tra
     // Add variables as WASM locals
     for (var, ir_ty) in kasl_func.get_var_types() {
         let wasm_ty = convert_type(ir_ty);
-        context.var_map.insert(*var, local_index);
+        ctx.var_map.insert(*var, local_index);
         locals.push((local_index, wasm_ty));
         local_index += 1;
     }
 
     // Add a local variable to track the current block index and the stack pointer
-    context.l_current_block = local_index;
+    ctx.l_current_block = local_index;
     locals.push((local_index, ValType::I64));
-    context.l_stack_ptr = local_index + 1;
+    ctx.l_stack_ptr = local_index + 1;
     locals.push((local_index, ValType::I32));
 
-    (locals, context)
+    (locals, ctx)
 }
 
 /// Converts the KASL-IR type to the corresponding WebAssembly type.
