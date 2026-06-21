@@ -67,7 +67,14 @@ impl<'a> InstTranslator<'a> {
             Inst::Const { value, dst } => {
                 self.inst_const(value, dst);
             }
-            Inst::Assign { var, src } => {}
+            Inst::Assign { var, src } => {
+                self.wasm_func
+                    .instructions()
+                    .local_get(self.ctx.val_map[src]);
+                self.wasm_func
+                    .instructions()
+                    .local_set(self.ctx.var_map[var]);
+            }
             Inst::LoadVar { var, dst } => {}
             Inst::Jump { block, args } => {}
             Inst::Brif {

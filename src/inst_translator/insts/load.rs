@@ -27,10 +27,12 @@ impl InstTranslator<'_> {
         dst: &Value,
     ) {
         // 1: src_ptr
+        // First, get the value of str_ptr and push it to the stack
         self.wasm_func
             .instructions()
             .local_get(self.ctx.val_map[src_ptr]);
 
+        // Then calculate the offset to load from and push it to the stack
         let offset = offset_to_wasm(src_offset);
         let mem_arg = MemArg {
             offset,
