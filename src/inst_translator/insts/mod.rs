@@ -15,14 +15,16 @@
 //
 
 mod alloc;
+mod bin_op;
+mod cmp;
+mod cmp_imm;
 mod const_val;
 mod conversion;
 mod jump;
 mod load;
-mod memcpy;
-mod memset;
 mod resize;
 mod store;
+mod unary_op;
 
 use crate::inst_translator::{block_translator::InstTranslator, utils::offset_to_i32};
 use kasl_ir::Inst;
@@ -59,14 +61,28 @@ impl<'a> InstTranslator<'a> {
                 src_ptr,
                 dst_ptr,
             } => {
-                self.inst_memcpy(size, src_ptr, dst_ptr);
+                // 1: dst_ptr, 2: src_ptr, 3: size
+                self.wasm_func
+                    .instructions()
+                    .local_get(self.ctx.val_map[dst_ptr]);
+                self.wasm_func
+                    .instructions()
+                    .local_get(self.ctx.val_map[src_ptr]);
+                self.wasm_func.instructions().i32_const(*size as i32);
+                self.wasm_func.instructions().memory_copy(0, 0);
             }
             Inst::Memset {
                 size,
                 value,
                 dst_ptr,
             } => {
-                self.inst_memset(size, value, dst_ptr);
+                // 1: dst_ptr, 2: value, 3: size
+                self.wasm_func
+                    .instructions()
+                    .local_get(self.ctx.val_map[dst_ptr]);
+                self.wasm_func.instructions().i32_const(*value as i32);
+                self.wasm_func.instructions().i32_const(*size as i32);
+                self.wasm_func.instructions().memory_fill(0);
             }
             Inst::Const { value, dst } => {
                 self.inst_const(value, dst);
@@ -165,13 +181,27 @@ impl<'a> InstTranslator<'a> {
                     .instructions()
                     .local_set(self.ctx.val_map[dst]);
             }
-            Inst::IBinOp { op, lhs, rhs, dst } => {}
-            Inst::FBinOp { op, lhs, rhs, dst } => {}
-            Inst::IUnaryOp { op, operand, dst } => {}
-            Inst::FUnaryOp { op, operand, dst } => {}
-            Inst::ICmp { cmp, lhs, rhs, dst } => {}
-            Inst::FCmp { cmp, lhs, rhs, dst } => {}
-            Inst::ICmpImm { cmp, lhs, rhs, dst } => {}
+            Inst::IBinOp { op, lhs, rhs, dst } => {
+                self.inst_ibop(op, lhs, rhs, dst);
+            }
+            Inst::FBinOp { op, lhs, rhs, dst } => {
+                self.inst_fbop(op, lhs, rhs, dst);
+            }
+            Inst::IUnaryOp { op, operand, dst } => {
+                self.inst_iuop(op, operand, dst);
+            }
+            Inst::FUnaryOp { op, operand, dst } => {
+                self.inst_fuop(op, operand, dst);
+            }
+            Inst::ICmp { cmp, lhs, rhs, dst } => {
+                self.inst_icmp(cmp, lhs, rhs, dst);
+            }
+            Inst::FCmp { cmp, lhs, rhs, dst } => {
+                self.inst_fcmp(cmp, lhs, rhs, dst);
+            }
+            Inst::ICmpImm { cmp, lhs, rhs, dst } => {
+                self.inst_icmp_imm(cmp, lhs, rhs, dst);
+            }
         }
     }
 }

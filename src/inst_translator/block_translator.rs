@@ -43,4 +43,13 @@ impl<'a> InstTranslator<'a> {
             self.translate_inst(inst);
         }
     }
+
+    /// Emits instructions using the provided closure.
+    #[inline(always)]
+    pub(in crate::inst_translator) fn emit<F, R>(&mut self, f: F)
+    where
+        F: FnOnce(&mut wasm_encoder::InstructionSink<'_>) -> R,
+    {
+        f(&mut self.wasm_func.instructions());
+    }
 }
