@@ -191,6 +191,7 @@ impl InstTranslator<'_> {
                     self.wasm_func.instructions().f32_mul();
                     self.wasm_func.instructions().f32_sub();
                 }
+                FloatBinOp::Pow => {}
             },
         }
     }
