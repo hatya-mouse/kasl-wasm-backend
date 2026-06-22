@@ -51,7 +51,7 @@ pub fn compile(kasl_func: Function) -> Result<Vec<u8>, WasmBackendError> {
     exports.export("f", ExportKind::Func, 0);
     module.section(&exports);
 
-    // TODO: Add function to the codes section
+    // Construct the function body and add it to the code section
     let mut codes = CodeSection::new();
     let wasm_func = construct_cfg(&kasl_func);
     codes.function(&wasm_func);
