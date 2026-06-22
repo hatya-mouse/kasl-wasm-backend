@@ -1,0 +1,19 @@
+version: "3"
+
+tasks:
+    build_math:
+        desc: Compile Rust math library to WebAssembly
+        cmds:
+            - cargo build --manifest-path math_lib/Cargo.toml --target wasm32-unknown-unknown --release
+            - cp math_lib/target/wasm32-unknown-unknown/release/math_lib.wasm src/math.wasm
+        sources:
+            - math_lib/src/lib.rs
+            - math_lib/Cargo.toml
+        generates:
+            - src/math.wasm
+
+    clean:
+        desc: Clean build artifacts
+        cmds:
+            - cargo clean
+            - rm -f src/math.wasm
